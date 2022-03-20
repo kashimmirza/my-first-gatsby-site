@@ -1,0 +1,104 @@
+from django.shortcuts import render, redirect
+# Import App Models
+# from .models import * 
+
+# Importing Predefined User model from Django
+from django.contrib.auth.models import User
+# User Authication packages
+from django.contrib.auth import authenticate, login, logout
+# Importing Messages package i.e. for error messages
+from django.contrib import messages
+# Importing Predefined Signup Form
+from django.contrib.auth.forms import UserCreationForm
+
+""" 
+    USER Authentication 
+        user_login is used for login. It was copied from another code.
+        user_register is used for registering new user. Probably doesn't work.
+        user_logout is used for logging out user from session.
+"""
+
+# Start of User Authentication
+
+
+def user_login(request):
+    context = {}
+    next = request.GET.get('next')
+    if request.method == "POST":
+        username = request.POST['username']
+        password = request.POST['password']
+        user = authenticate(request, username=username, password=password)
+        if user:
+            login(request, user)
+            if next:
+                return redirect(next)
+            else:
+                messages.success(request, "You have successfully logged in!")
+                return redirect('backend:dashboard')
+        else:
+            messages.error(request, "Provide valid credentials.")
+            return render(request, 'auth/login.html')
+
+    else:
+        return render(request, 'auth/login.html', context)
+
+
+def user_register(request):
+    if request.method == 'POST':
+        form = UserCreationForm(request.POST)
+        if form.is_valid():
+            form.save()
+            username = form.cleaned_data.get('username')
+            raw_password = form.cleaned_data.get('password1')
+            user = authenticate(username=username, password=raw_password)
+            login(request, user)
+            return redirect('backend:profile')
+    else:
+        form = UserCreationForm()
+    return render(request, 'auth/register.html', {'form': form})
+
+
+def user_logout(request):
+    messages.success(request, "You have been logged out!")
+    logout(request)
+    return redirect('backend:login')
+
+# End of User Authentication
+
+# User profile
+
+def profile(request, username):
+    profile = User.objects.get(username=username)
+    pass
+
+# End of User Profile
+
+
+# Start of Dashboard
+
+def dashboard(request):
+    
+    return render(request, 'dashboard/dashboard.html')
+
+# End of Dashboard
+
+from rest_framework.parsers import FileUploadParser
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework import status
+
+from api.serializers import FileSerializer
+
+
+class FileUploadView(APIView):
+    parser_class = (FileUploadParser,)
+
+    def post(self, request, *args, **kwargs):
+
+      file_serializer = FileSerializer(data=request.data)
+
+      if file_serializer.is_valid():
+          file_serializer.save()
+          return Response(file_serializer.data, status=status.HTTP_201_CREATED)
+      else:
+          return Response(file_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
