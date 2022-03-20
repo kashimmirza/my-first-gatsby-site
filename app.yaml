@@ -1,0 +1,7 @@
+# [START runtime]
+runtime: python
+env: flex
+entrypoint: gunicorn -b :$PORT CSE327.wsgi
+
+runtime_config:
+  python_version: 3
